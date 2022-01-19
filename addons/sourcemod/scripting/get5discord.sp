@@ -12,7 +12,7 @@
 #undef REQUIRE_EXTENSIONS
 #include <SteamWorks>
 
-char g_webhookURL[1024];
+char g_WebhookURL[1024];
 char g_Username[1024] = "Match Result Bot";
 char g_AvatarUrl[1024] = "https://i.imgur.com/rHYHg0j.png";
 int g_Color = 39423;
@@ -27,17 +27,8 @@ public Plugin myinfo = {
 };
 
 public void OnPluginStart() {
-    RegAdminCmd("setWebhookUrl", Command_SetURL, ADMFLAG_CHANGEMAP,
-        "Set the Discord Webhook URL for where the results will be posted. URLs should begin with: https://discord.com/api/webhooks/");
-    RegAdminCmd("setUsername", Command_SetUsername, ADMFLAG_CHANGEMAP,
-        "Set the Username that will show up when results are posted in Discord.");
-    RegAdminCmd("setAvatarUrl", Command_SetAvatarUrl, ADMFLAG_CHANGEMAP,
-        "Set the Profile Picture that will show up when results are posted in Discord.");
-    RegAdminCmd("setColor", Command_SetColor, ADMFLAG_CHANGEMAP,
-        "Set the color of the sidebar on the results.");
-
     char path[PLATFORM_MAX_PATH];
-    BuildPath(Path_SM, path, sizeof(path), "data/get5discord.cfg");
+    BuildPath(Path_SM, path, sizeof(path), "configs/get5discord.cfg");
 
     if (!FileExists(path)) {
         WriteConfigFile();
@@ -52,8 +43,8 @@ public void OnPluginStart() {
 
         if (StrEqual(split[0], "webhook")) {
             ReplaceString(split[1], sizeof(split[]), "\n", "");
-            strcopy(g_webhookURL, sizeof(g_webhookURL), split[1]);
-            LogMessage("Webhook URL set to %s", g_webhookURL);
+            strcopy(g_WebhookURL, sizeof(g_WebhookURL), split[1]);
+            LogMessage("Webhook URL set to %s", g_WebhookURL);
         } else {
             LogError("Incorrectly formatted .cfg file, failed to load webhook URL.");
         }
@@ -93,35 +84,6 @@ public void OnPluginStart() {
 
         delete file;
     }
-}
-
-public Action Command_SetURL(int client, int args) {
-    GetCmdArg(1, g_webhookURL, sizeof(g_webhookURL));
-    PrintToConsole(client, "URL set.");
-
-    WriteConfigFile();
-}
-
-public Action Command_SetUsername(int client, int args) {
-    GetCmdArg(1, g_Username, sizeof(g_Username));
-    PrintToConsole(client, "Username set.");
-
-    WriteConfigFile();
-}
-
-public Action Command_SetAvatarUrl(int client, int args) {
-    GetCmdArg(1, g_AvatarUrl, sizeof(g_AvatarUrl));
-    PrintToConsole(client, "Avatar URL set.");
-
-    WriteConfigFile();
-}
-
-public Action Command_SetColor(int client, int args) {
-    char buffer[1024];
-    GetCmdArg(1, buffer, sizeof(buffer));
-    g_Color = StringToInt(buffer);
-
-    WriteConfigFile();
 }
 
 public void Get5_OnMapResult(const char[] map, MatchTeam mapWinner, int team1Score, int team2Score, int mapNumber) {
@@ -219,11 +181,12 @@ public void CreateMatchEndRequests(const char[] map, int mapNumber) {
     hObj.Encode(JSON_DUMP, sizeof(JSON_DUMP));
     PrintToServer("%s", JSON_DUMP);
 
-    Handle req = SteamWorks_CreateHTTPRequest(k_EHTTPMethodPOST, g_webhookURL);
+    Handle req = SteamWorks_CreateHTTPRequest(k_EHTTPMethodPOST, g_WebhookURL);
 
     if (req != INVALID_HANDLE) {
         SteamWorks_SetHTTPRequestRawPostBody(req, "application/json", JSON_DUMP, strlen(JSON_DUMP));
         SteamWorks_SendHTTPRequest(req);
+        LogMessage("Sending request to %s", g_WebhookURL)
     }
     delete req;
     json_cleanup_and_delete(hObj);
@@ -284,11 +247,11 @@ public JSON_Object AddStatsToJson(KeyValues kv, MatchTeam team) {
 
 public void WriteConfigFile() {
     char path[PLATFORM_MAX_PATH];
-    BuildPath(Path_SM, path, sizeof(path), "data/get5discord.cfg");
+    BuildPath(Path_SM, path, sizeof(path), "configs/get5discord.cfg");
 
     File file = OpenFile(path, "w");
 
-    file.WriteLine("webhookURL:%s", g_webhookURL);
+    file.WriteLine("webhookURL:%s", g_WebhookURL);
     file.WriteLine("username:%s", g_Username);
     file.WriteLine("avatarURL:%s", g_AvatarUrl);
     file.WriteLine("color:%d", g_Color);
