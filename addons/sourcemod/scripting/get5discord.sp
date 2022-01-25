@@ -132,28 +132,24 @@ public void CreateMatchEndRequests(const char[] map, int mapNumber) {
 
     if (kv.JumpToKey(mapKey)) {
         if (kv.JumpToKey("team1")) {
-            JSON_Object hPlayer = AddStatsToJson(kv, MatchTeam_Team1);
-            hPlayers.PushObject(hPlayer);
+            AddStatsToJson(hPlayers, kv, MatchTeam_Team1);
             kv.GoBack();
         }
         if (kv.JumpToKey("team2")) {
-            JSON_Object hPlayer = AddStatsToJson(kv, MatchTeam_Team2);
-            hPlayers.PushObject(hPlayer);
+            AddStatsToJson(hPlayers, kv, MatchTeam_Team2);
             kv.GoBack();
         }
         kv.GoBack();
     }
     else {
         Format(mapKey, sizeof(mapKey), "map%d", mapNumber);
-        kv.JumpToKey(mapKey)
+        kv.JumpToKey(mapKey);
         if (kv.JumpToKey("team1")) {
-            JSON_Object hPlayer = AddStatsToJson(kv, MatchTeam_Team1);
-            hPlayers.PushObject(hPlayer);
+            AddStatsToJson(hPlayers, kv, MatchTeam_Team1);
             kv.GoBack();
         }
         if (kv.JumpToKey("team2")) {
-            JSON_Object hPlayer = AddStatsToJson(kv, MatchTeam_Team2);
-            hPlayers.PushObject(hPlayer);
+            AddStatsToJson(hPlayers, kv, MatchTeam_Team2);
             kv.GoBack();
         }
         kv.GoBack();
@@ -192,10 +188,11 @@ public void CreateMatchEndRequests(const char[] map, int mapNumber) {
     json_cleanup_and_delete(hObj);
 }
 
-public JSON_Object AddStatsToJson(KeyValues kv, MatchTeam team) {
-    JSON_Object hPlayer = new JSON_Object();
+public void AddStatsToJson(JSON_Array hPlayers, KeyValues kv, MatchTeam team) {
     if (kv.GotoFirstSubKey()) {
         do {
+            JSON_Object hPlayer = new JSON_Object();
+
             char auth[AUTH_LENGTH];
             kv.GetSectionName(auth, sizeof(auth));
 
@@ -210,6 +207,8 @@ public JSON_Object AddStatsToJson(KeyValues kv, MatchTeam team) {
             char statsString[1024];
             Format(statsString, sizeof(statsString), "Kills: %d\nAssists: %d\nDeaths: %d", kv.GetNum(STAT_KILLS), kv.GetNum(STAT_ASSISTS), kv.GetNum(STAT_DEATHS));
             hPlayer.SetString("value", statsString);
+
+            hPlayers.PushObject(hPlayer);
 
             /*AddIntStat(req, kv, STAT_KILLS);
             AddIntStat(req, kv, STAT_DEATHS);
@@ -242,7 +241,6 @@ public JSON_Object AddStatsToJson(KeyValues kv, MatchTeam team) {
         } while (kv.GotoNextKey());
         kv.GoBack();
     }
-    return hPlayer;
 }
 
 public void WriteConfigFile() {
