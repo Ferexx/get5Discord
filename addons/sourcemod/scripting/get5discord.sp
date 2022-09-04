@@ -86,19 +86,18 @@ public void OnPluginStart() {
     }
 }
 
-public void Get5_OnMapResult(const char[] map, MatchTeam mapWinner, int team1Score, int team2Score, int mapNumber) {
-    char winnerString[64];
-    GetTeamString(mapWinner, winnerString, sizeof(winnerString));
-    
-    CreateMatchEndRequests(map, mapNumber);
+public void Get5_OnMapResult(const Get5MapResultEvent event) {
+    CreateMatchEndRequests(event);
 }
 
-public void CreateMatchEndRequests(const char[] map, int mapNumber) {
-    char t1name[64], t2name[64];
+public void CreateMatchEndRequests(const Get5MapResultEvent event) {
+    int mapNumber = event.MapNumber;
+    char t1name[64], t2name[64], map[64];
     FindConVar("mp_teamname_1").GetString(t1name, sizeof(t1name));
-    int t1score = CS_GetTeamScore(Get5_MatchTeamToCSTeam(MatchTeam_Team1));
+    int t1score = event.Team1Score;
     FindConVar("mp_teamname_2").GetString(t2name, sizeof(t2name));
-    int t2score = CS_GetTeamScore(Get5_MatchTeamToCSTeam(MatchTeam_Team2));
+    int t2score = event.Team2Score;
+    GetCurrentMap(map, sizeof(map));
 
     // Begin JSON
     JSON_Object hObj = new JSON_Object();
@@ -132,11 +131,11 @@ public void CreateMatchEndRequests(const char[] map, int mapNumber) {
 
     if (kv.JumpToKey(mapKey)) {
         if (kv.JumpToKey("team1")) {
-            AddStatsToJson(hPlayers, kv, MatchTeam_Team1);
+            AddStatsToJson(hPlayers, kv, Get5Team_1);
             kv.GoBack();
         }
         if (kv.JumpToKey("team2")) {
-            AddStatsToJson(hPlayers, kv, MatchTeam_Team2);
+            AddStatsToJson(hPlayers, kv, Get5Team_2);
             kv.GoBack();
         }
         kv.GoBack();
@@ -145,11 +144,11 @@ public void CreateMatchEndRequests(const char[] map, int mapNumber) {
         Format(mapKey, sizeof(mapKey), "map%d", mapNumber);
         kv.JumpToKey(mapKey);
         if (kv.JumpToKey("team1")) {
-            AddStatsToJson(hPlayers, kv, MatchTeam_Team1);
+            AddStatsToJson(hPlayers, kv, Get5Team_1);
             kv.GoBack();
         }
         if (kv.JumpToKey("team2")) {
-            AddStatsToJson(hPlayers, kv, MatchTeam_Team2);
+            AddStatsToJson(hPlayers, kv, Get5Team_2);
             kv.GoBack();
         }
         kv.GoBack();
@@ -188,7 +187,7 @@ public void CreateMatchEndRequests(const char[] map, int mapNumber) {
     json_cleanup_and_delete(hObj);
 }
 
-public void AddStatsToJson(JSON_Array hPlayers, KeyValues kv, MatchTeam team) {
+public void AddStatsToJson(JSON_Array hPlayers, KeyValues kv, Get5Team team) {
     if (kv.GotoFirstSubKey()) {
         do {
             JSON_Object hPlayer = new JSON_Object();
